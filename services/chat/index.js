@@ -1,0 +1,19 @@
+import express from "express";
+import connectDb from "./config/db.js";
+import{chatRoutes} from "./routes/chat.route.js"
+import dotenv from "dotenv";
+dotenv.config();
+const port=process.env.PORT || 8002;
+const app=express();
+
+app.use(express.json());
+
+app.use("/api/chatRoutes",)
+app.use("/",(req,res)=>{
+    res.send("auth is running");
+})
+
+connectDb();
+app.listen(port,()=>{
+    console.log(`auth is running on port ${port}`);
+})
