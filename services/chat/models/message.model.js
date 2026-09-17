@@ -8,9 +8,26 @@ const fileSchema=new mongoose.Schema({
 })
 
 const artifactSchema=new mongoose.Schema({
-  id:Number,
+  id:String,
+  title:String,
   type:String,
-  files:[fileSchema]
+  filename:String,
+  url:String,
+  content:String,
+  language:String,
+  status:String,
+  files:[fileSchema],
+  createdAt:Date
+},{
+  _id:false
+})
+
+const attachmentSchema=new mongoose.Schema({
+  name:String,
+  type:String,
+  size:Number,
+  status:String,
+  pages:Number
 },{
   _id:false
 })
@@ -24,8 +41,12 @@ const messageSchema=new mongoose.Schema({
         type:String,
         enum:["user","assistant"]
       },
-      content:string,
+      content:{
+        type:String,
+        required:true
+      },
       images:[String ],
+      attachments:[attachmentSchema],
       artifacts:[artifactSchema]
 },{timestamps:true})
 const Message=mongoose.model("Message",messageSchema)

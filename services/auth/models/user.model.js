@@ -7,7 +7,7 @@ const userSchema=new mongoose.Schema({
     },
     name:String,
     email:String,
-    avtar:String,
+    avatar:String,
     plan:{
         type:String,
         default:"free"
@@ -17,7 +17,8 @@ const userSchema=new mongoose.Schema({
         default:100
     },
     totalCredits:{
-        type:Number
+        type:Number,
+        default:100
     },
     planExpiresAt:Date
 

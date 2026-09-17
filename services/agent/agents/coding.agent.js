@@ -1,7 +1,7 @@
 import { checkAgentLimit } from "../config/agentLimit.js";
 import { getModel } from "../config/llmModel.js"
 import { deductCredits } from "../utils/deductCredits.js"
-
+import { extractJson } from "../utils/extractJson.js";
 
 export const codingAgent=async(state)=>{  
     await checkAgentLimit(state.userId,"coding")  
@@ -11,7 +11,7 @@ export const codingAgent=async(state)=>{
         You are an intent classifier.
         
         Return ONLY one of these values.
-        CODE_GENRATION
+        CODE_GENERATION
         CODE_REVIEW
         CODE_EXPLANATION
         DEBUGGING
@@ -22,8 +22,9 @@ export const codingAgent=async(state)=>{
         USER Request:
         ${state.prompt}`)
 
-   const intent=intentRes.content
-   if(intent==="CODE_GENRATION"){
+   const intent = intentRes.content.trim();
+   
+   if(intent==="CODE_GENERATION"){
       const prompt=`You are a Senior Software Engineer AI.
 
 Your responsibility is to write production-ready code.
@@ -43,51 +44,68 @@ Requirements:
 - Avoid deprecated libraries and APIs.
 - Do not invent libraries or functions.
 
-Response Format:
+Rules:
+Return ONLY valid JSON.
 
-## Approach
+Do NOT return markdown.
+Do NOT use \`\`\`.
+Do NOT explain anything outside the JSON.
+Do NOT include any text before or after the JSON.
 
-Brief explanation.
+The JSON schema is:
 
-## Implementation
-
-Provide complete code.
-
-## Complexity
-
-Time and Space Complexity.
-
-## Notes
-
-Mention assumptions and edge cases.
+{
+  "title": "Short title",
+  "language": "java",
+  "files": [
+    {
+      "filename": "Solution.java",
+      "content": "complete source code here"
+    }
+  ]
+}
 
 Rules:
--output must start with {
--output must end with }
--No extra text
--No \'\'\
--Never mention intent
+- Response must be valid JSON.
+- Double quotes only.
+- Escape newlines correctly.
+- Never include markdown.
 
-User Request:${state.prompt }
+User Request:
+${state.prompt}
+
 `
-const res=await llm.invoke(prompt)
-const data=JSON.parse(res.content)
+const res = await llm.invoke(prompt);
+
+
+
+const data = extractJson(res.content);
+const file=data.files?.[0];
 await deductCredits(state.userId,"coding")
 
 return{
     ...state,
-    aiResponse:"Code genrated successfully",
+      aiResponse:`## ${data.title}
+
+\`\`\`java
+${file.content}
+\`\`\`
+`,
     artifacts:[
         {
-            id:Date.now(),
-            type:"Project",
+            id:String(Date.now()),
+            title:data.title || "Generated code",
+            type:"Code",
+            language:data.language || "text",
+            status:"ready",
+            createdAt:new Date(),
             files:data.files ||[]
         }
     ]
 }
 
    }
-   const res=llm.invoke(`
+   const res=await llm.invoke(`
     You are a Senior Code Reviewer.
 
 Review the submitted code.

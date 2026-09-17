@@ -30,15 +30,25 @@ export const createConversation=async(req,res)=>{
 export const updateConversation=async(req,res)=>{
     try{
        const{id,title}=req.body;
-       if(!id ||!title){
-         res.status(400).json({
+       const userId=req.headers["x-user-id"];
+       if(!id ||!title?.trim()){
+         return res.status(400).json({
             success:false,
             message:"All fields are required to update conversation"
          })
        }
-       const conversation=await Conversation.findOne(id,{
-        title,
-       })
+       const conversation=await Conversation.findOneAndUpdate(
+        { _id:id, userId },
+        { title: title.trim() },
+        { new:true }
+       )
+       if(!conversation){
+         return res.status(404).json({
+           success:false,
+           message:"Conversation not found"
+         })
+       }
+
        res.status(200).json({
         success:true,
         message:"Conversation updated successfully",
@@ -54,6 +64,30 @@ export const updateConversation=async(req,res)=>{
     
 }
 
+export const deleteConversation=async(req,res)=>{
+    try{
+      const userId=req.headers["x-user-id"];
+      const conversation=await Conversation.findOneAndDelete({
+        _id:req.params.id,
+        userId
+      });
+      if(!conversation){
+        return res.status(404).json({success:false,message:"Conversation not found"});
+      }
+      await Message.deleteMany({conversationId:conversation._id});
+      return res.status(200).json({
+        success:true,
+        message:"Conversation deleted successfully"
+      });
+    }
+    catch(err){
+      return res.status(500).json({
+        success:false,
+        message:`Error while deleting conversation ${err}`
+      });
+    }
+}
+
 export const getConversation=async(req,res)=>{
     try{
       const userId=req.headers["x-user-id"];
@@ -63,13 +97,27 @@ export const getConversation=async(req,res)=>{
             message:"userID is required to get the conversation"
         })
       }
-      const conversation=await Conversation.find({
+      const conversations=await Conversation.find({
         userId:userId
       }).sort({updatedAt:-1})
+
+      const enriched = await Promise.all(conversations.map(async (conversation) => {
+        const latestMessageDoc = await Message.findOne({ conversationId: conversation._id }).sort({ createdAt: -1 }).lean();
+        const latestMessage = latestMessageDoc?.content?.trim() || conversation.latestMessage || "";
+        const preview = latestMessage ? latestMessage.replace(/\s+/g, " ").trim() : "";
+
+        return {
+          ...conversation.toObject(),
+          latestMessage: preview.length > 180 ? `${preview.substring(0, 177)}...` : preview,
+          latestModel: conversation.latestModel || latestMessageDoc?.role || "chat",
+          updatedAt: conversation.updatedAt || latestMessageDoc?.updatedAt || conversation.createdAt,
+        }
+      }))
+
       res.status(200).json({
         success:true,
         message:"Conversation fetched successfully",
-        conversation
+        conversation: enriched
       })
     }
     catch(err){
@@ -82,7 +130,7 @@ export const getConversation=async(req,res)=>{
 
 export const saveMessage=async(req,res)=>{
     try{
-        const{conversationId,role,content,images,artifacts}=req.body;
+        const{conversationId,role,content,images,artifacts,attachments,latestModel}=req.body;
         if(!conversationId ||!role ||!content){
             return res.status(400).json({
                 success:false,
@@ -90,12 +138,18 @@ export const saveMessage=async(req,res)=>{
             })
         }
         const message=await Message.create({
-            conversationId,role,content,images,artifacts
+            conversationId,role,content,images,artifacts,attachments  
         })
+        await autoUpdateConversationTitle(
+            conversationId,
+            role,
+            content
+        );
+        await updateConversationPreview(conversationId, role, content, latestModel);
         res.status(200).json({
-        success:true,
-        message
-      })
+            success:true,
+            message
+        })
     }
     catch(err){
          res.status(500).json({
@@ -109,7 +163,7 @@ export const getMessage=async(req,res)=>{
      
       const messages=await Message.find({
         conversationId:req.params.conversationId    
-      }).sort({createdAt:-1})
+      }).sort({createdAt:1})
       res.status(200).json({
         success:true,
         message:"Message fetched successfully",
@@ -123,3 +177,38 @@ export const getMessage=async(req,res)=>{
       })
     }
 }
+
+const autoUpdateConversationTitle = async (
+    conversationId,
+    role,
+    content
+) => {
+    if (role !== "user") return;
+
+    const conversation = await Conversation.findById(conversationId);
+
+    if (!conversation) return;
+
+    if (conversation.title !== "New chat") return;
+
+    await Conversation.findByIdAndUpdate(conversationId, {
+        title:
+            content.length > 45
+                ? content.substring(0, 45) + "..."
+                : content,
+    });
+};
+
+const updateConversationPreview = async (conversationId, role, content, latestModel) => {
+    const conversation = await Conversation.findById(conversationId);
+    if (!conversation) return;
+
+    const nextContent = String(content || "").replace(/\s+/g, " ").trim();
+    if (!nextContent) return;
+
+    await Conversation.findByIdAndUpdate(conversationId, {
+        latestMessage: nextContent.length > 180 ? `${nextContent.substring(0, 177)}...` : nextContent,
+        latestModel: latestModel || (role === "assistant" ? "assistant" : "chat"),
+        updatedAt: new Date(),
+    });
+};

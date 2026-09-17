@@ -22,9 +22,14 @@ const paymentSchema=new mongoose.Schema({
     plan:{
         type:String,
     },
+    purchaseType:{
+        type:String,
+        enum:["plan","credits"],
+        default:"plan"
+    },
     status:{
       type:String,
-      enum:["created","paid","F=failed"],
+      enum:["created","paid","failed"],
       default:"created"
     }
 },{timestamps:true})

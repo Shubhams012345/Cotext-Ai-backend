@@ -7,7 +7,7 @@ export const uploadToS3=async(filename,buffer,contentType)=>{
         Bucket:process.env.AWS_BUCKET_NAME,
         Body:buffer,
         Key:filename,
-        contentType:contentType
+        ContentType:contentType
     })
   )
   return filename

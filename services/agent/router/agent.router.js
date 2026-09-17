@@ -1,8 +1,12 @@
-import express from "express"
+import express from "express";
 import { agent } from "../controllers/agent.controller.js";
-import multer from "../config/multer.js"
-const router=express.Router();
+import upload from "../config/multer.js";
+const router = express.Router();
 
-router.post("/chat",multer.single("file"),agent)
+router.post(
+  "/chat",
+  upload.single("file"),
+  agent
+);
 
-export default router
+export default router;

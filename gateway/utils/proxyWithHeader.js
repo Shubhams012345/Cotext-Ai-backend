@@ -7,8 +7,10 @@ export const proxyWithHeader = (serviceUrl, servicePrefix) => {
     },
 
     proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+    
+
       if (srcReq.user) {
-        proxyReqOpts.headers["x-user-id"] = srcReq.user.userId;
+        proxyReqOpts.headers["x-user-id"] = srcReq.user.userID;
       }
 
       return proxyReqOpts;

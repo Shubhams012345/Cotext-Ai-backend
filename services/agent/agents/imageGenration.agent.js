@@ -1,5 +1,6 @@
+import axios from "axios";
 import { getModel } from "../config/llmModel.js";
-import { getFromS3 } from "../utils/getFromS3";
+import { getFromS3 } from "../utils/getFromS3.js";
 import { uploadToS3 } from "../utils/uploadTos3.js";
 import { deductCredits } from "../utils/deductCredits.js"
 import { checkAgentLimit } from "../config/agentLimit.js";
@@ -51,6 +52,15 @@ User Request:${state.prompt}`);
     📩 [Download Image](${downloadUrl})
     
    ⌛ Link expires in 10mins.`,
+    artifacts:[{
+      id:filename,
+      title:"Generated image",
+      type:"Images",
+      filename,
+      url:downloadUrl,
+      status:"ready",
+      createdAt:new Date()
+    }]
   }
   }
   catch(err){

@@ -20,5 +20,12 @@ export const PLANS={
         credits:1000,
         validity:30
     },
+    credits:{
+        id:"credits",
+        name:"credits",
+        amount:99,
+        credits:250,
+        validity:0
+    },
 
 };

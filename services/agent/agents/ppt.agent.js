@@ -3,7 +3,7 @@ import { genratePpt } from '../utils/genratePpt.js';
 import { getFromS3 } from '../utils/getFromS3.js';
 import { deductCredits } from "../utils/deductCredits.js"
 import { checkAgentLimit } from '../config/agentLimit.js';
-
+import {uploadToS3} from '../utils/uploadTos3.js'
 export const pptAgent=async(state)=>{
     try{
         await checkAgentLimit(state.userId,"ppt")
@@ -57,6 +57,15 @@ export const pptAgent=async(state)=>{
         **${data.title}**
         [Download ppt](${downloadUrl})
         ⌛_Link expires in 10 minutes._`
+        ,artifacts:[{
+          id:filename,
+          title:data.title || "Generated presentation",
+          type:"PPT",
+          filename,
+          url:downloadUrl,
+          status:"ready",
+          createdAt:new Date()
+        }]
     }
     }
     catch(err){

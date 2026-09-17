@@ -32,7 +32,7 @@ export const checkAgentLimit=async(userId,agent)=>{
             retryAfter:time,
             message:`You have reached the ${agent} limit (${max} requests/minute).Try again in ${time}`
         }
-        throw Error;
+        throw error;
     }
   return{
     remaining:max-count,

@@ -7,7 +7,14 @@ const conversationSchema=new mongoose.Schema({
     userId:{
         type:String
     },
-
+    latestMessage:{
+        type:String,
+        default:""
+    },
+    latestModel:{
+        type:String,
+        default:"chat"
+    }
 },{timestamps:true})
 const Conversation=mongoose.model("Conversation",conversationSchema)
 export default Conversation

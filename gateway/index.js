@@ -11,7 +11,7 @@ const port=process.env.PORT || 8000;
 const app=express();
 
 app.use(cors({
-    origin:process.env.FRONTEND_URL,
+    origin:process.env.FRONTEND_URL || "http://localhost:5173",
     credentials:true,
 }))
 app.use(cookieParser())
@@ -26,7 +26,7 @@ app.use(
 app.use(
   "/api/chat",
   protect,
-  proxyWithHeader(process.env.CHAT_SERVICE, "/chat")
+  proxyWithHeader(process.env.CHAT_SERVICE, "/api/chatRoutes")
 );
 app.use(
   "/api/billing",
