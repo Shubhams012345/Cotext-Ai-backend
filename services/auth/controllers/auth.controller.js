@@ -33,13 +33,12 @@ export const login=async(req,res)=>{
           ,planExpiresAt:user.planExpiresAt
        }),"EX",7*24*60*60)
 
-       res.cookie("session",sessionId, {
-            httpOnly:true,
-            sameSite:"none",
-            secure:process.env.NODE_ENV === "production",
-            maxAge:7*24*60*60*1000
-        }
-       )
+      res.cookie("session", sessionId, {
+    httpOnly: true,
+    sameSite: "none",
+    secure: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000
+});
        
        return res.status(200).json({message:"Login successful",user});
     }
